@@ -6,17 +6,20 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/event-types': {
+      '/api/event-types': {
         target: 'http://localhost:4010',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      '/bookings': {
+      '/api/bookings': {
         target: 'http://localhost:4010',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      '/availability': {
+      '/api/availability': {
         target: 'http://localhost:4010',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
