@@ -1,0 +1,508 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Calendar Booking API",
+    "version": "1.0.0",
+    "description": "API for managing event types and bookings"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Calendar Booking Server"
+    }
+  ],
+  "paths": {
+    "/event-types": {
+      "get": {
+        "summary": "List all event types",
+        "operationId": "listEventTypes",
+        "responses": {
+          "200": {
+            "description": "List of event types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventType"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "evt-001",
+                    "name": "30 Min Meeting",
+                    "description": "Quick consultation call",
+                    "durationMinutes": 30
+                  },
+                  {
+                    "id": "evt-002",
+                    "name": "60 Min Meeting",
+                    "description": "Extended consultation call",
+                    "durationMinutes": 60
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new event type",
+        "operationId": "createEventType",
+        "headers": {
+          "X-Admin-Key": {
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventTypeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event type created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventType"
+                },
+                "example": {
+                  "id": "evt-003",
+                  "name": "New Event Type",
+                  "description": "A new event type",
+                  "durationMinutes": 45
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings": {
+      "get": {
+        "summary": "List all upcoming bookings (admin view)",
+        "operationId": "listBookings",
+        "headers": {
+          "X-Admin-Key": {
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "List of bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "bkg-001",
+                    "eventTypeId": "evt-001",
+                    "eventTypeName": "30 Min Meeting",
+                    "startTime": "2026-04-25T10:00:00Z",
+                    "endTime": "2026-04-25T10:30:00Z",
+                    "guestName": "John Doe",
+                    "guestEmail": "john@example.com",
+                    "createdAt": "2026-04-24T09:00:00Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new booking",
+        "operationId": "createBooking",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                },
+                "example": {
+                  "id": "bkg-002",
+                  "eventTypeId": "evt-001",
+                  "eventTypeName": "30 Min Meeting",
+                  "startTime": "2026-04-25T14:00:00Z",
+                  "endTime": "2026-04-25T14:30:00Z",
+                  "guestName": "Jane Smith",
+                  "guestEmail": "jane@example.com",
+                  "createdAt": "2026-04-24T10:00:00Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Slot Already Taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotAlreadyTakenError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/availability": {
+      "get": {
+        "summary": "Get available time slots for an event type",
+        "operationId": "getAvailability",
+        "parameters": [
+          {
+            "name": "eventTypeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityResponse"
+                },
+                "example": {
+                  "date": "2026-04-25",
+                  "slots": [
+                    {
+                      "startTime": "2026-04-25T09:00:00Z",
+                      "endTime": "2026-04-25T09:30:00Z",
+                      "isAvailable": true
+                    },
+                    {
+                      "startTime": "2026-04-25T09:30:00Z",
+                      "endTime": "2026-04-25T10:00:00Z",
+                      "isAvailable": false
+                    },
+                    {
+                      "startTime": "2026-04-25T10:00:00Z",
+                      "endTime": "2026-04-25T10:30:00Z",
+                      "isAvailable": true
+                    },
+                    {
+                      "startTime": "2026-04-25T14:00:00Z",
+                      "endTime": "2026-04-25T14:30:00Z",
+                      "isAvailable": true
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EventType": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "name", "description", "durationMinutes"]
+      },
+      "CreateEventTypeRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "integer"
+          }
+        },
+        "required": ["name", "description", "durationMinutes"]
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "eventTypeId": {
+            "type": "string"
+          },
+          "eventTypeName": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guestName": {
+            "type": "string"
+          },
+          "guestEmail": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "eventTypeId", "eventTypeName", "startTime", "endTime", "guestName", "guestEmail", "createdAt"]
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "properties": {
+          "eventTypeId": {
+            "type": "string"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "guestName": {
+            "type": "string"
+          },
+          "guestEmail": {
+            "type": "string"
+          }
+        },
+        "required": ["eventTypeId", "startTime", "guestName", "guestEmail"]
+      },
+      "TimeSlot": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          }
+        },
+        "required": ["startTime", "endTime", "isAvailable"]
+      },
+      "AvailabilityResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeSlot"
+            }
+          }
+        },
+        "required": ["date", "slots"]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["VALIDATION_ERROR"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "required": ["code", "message", "details"]
+      },
+      "SlotAlreadyTakenError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["SLOT_ALREADY_TAKEN"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"]
+      },
+      "NotFoundError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["NOT_FOUND"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"]
+      },
+      "UnauthorizedError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["UNAUTHORIZED"]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "message"]
+      }
+    }
+  }
+}
